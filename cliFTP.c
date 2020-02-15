@@ -102,13 +102,16 @@ int main()
 {
     char buffer[BUFFSIZE], kopia [BUFFSIZE], nazwaPliku[255], option[255];
     char command2[BUFFSIZE], command[BUFFSIZE], command3[BUFFSIZE];
-    char adres[20]={0};
+    char bufor[60]={0};
+    char adres[30]={0};
+    char port[30]={0};
     int clientSocket;
     size_t uchwyt=0;
     struct sockaddr_in serverAddr;
     socklen_t addr_size;
 
-    multicast(adres, sizeof(adres));
+    multicast(bufor, sizeof(bufor));
+    sscanf(bufor,"%s %s", adres, port);
 
     /*---- Create the socket. The three arguments are: ----*/
     /* 1) Internet domain 2) Stream socket 3) Default protocol (TCP in this case) */
@@ -118,7 +121,9 @@ int main()
     /* Address family = Internet */
     serverAddr.sin_family = AF_INET;
     /* Set port number, using htons function to use proper byte order */
-    serverAddr.sin_port = htons(7891);
+    int ii;
+    sscanf(port, "%d", &ii);
+    serverAddr.sin_port = htons(ii);
     /* Set IP address to localhost */
     serverAddr.sin_addr.s_addr = inet_addr(adres);
     /* Set all bits of the padding field to 0 */

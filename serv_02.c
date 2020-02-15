@@ -3,18 +3,21 @@
 static int nchildren;
 static pid_t *pids;
 
-void multicast ()
+void multicast (char adres[20], char port[20])
 {
     struct in_addr localInterface;
     struct sockaddr_in groupSock;
     int sd;
-    char databuf[20] = "127.0.0.1";//ADRES DO PRZESYLU DANYCH
+    char databuf[20];//ADRES DO PRZESYLU DANYCH
     int datalen = sizeof(databuf);
     char adres_multicast[20];
     char adres_serwera[20];
 
     strcpy(adres_multicast,"226.1.1.1");
     strcpy(adres_serwera,"10.0.2.15");//TRZEBA USTAWIC ADRES KARTY SIECIOWEJ!!!
+    strcpy(databuf, adres);
+    strcat(databuf, " ");
+    strcat(databuf, port);
 
     /* Create a datagram socket on which to send. */
     sd = socket(AF_INET, SOCK_DGRAM, 0);
@@ -70,6 +73,11 @@ int  main(int argc, char **argv)
     socklen_t clilen;
     char* komenda;
     pid_t pid;
+    char port[20];
+    char adres[20];
+
+    strcpy(port, "7891");
+    strcpy(adres, "127.0.0.1");
 
     int i;
     socklen_t addrlen;
@@ -86,9 +94,11 @@ int  main(int argc, char **argv)
     serverAddr.sin_family = AF_INET;
 
     /* Set port number, using htons function to use proper byte order */
-    serverAddr.sin_port = htons(7891);
+    int ii;
+    sscanf(port, "%d", &ii);
+    serverAddr.sin_port = htons(ii);
     /* Set IP address to localhost */
-    serverAddr.sin_addr.s_addr = htonl(INADDR_ANY);
+    serverAddr.sin_addr.s_addr = inet_addr(adres);
     sndbuf = 1;
     if (setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, &sndbuf, sizeof(sndbuf)) < 0)
     {
@@ -121,7 +131,7 @@ int  main(int argc, char **argv)
     for (i = 0; i < nchildren; i++)
         pids[i] = child_make(i, listenfd, addrlen); /* parent returns */
 
-    multicast();
+    multicast(adres, port);
 
 // signal(SIGINT, sig_int);
     for ( ; ; )
