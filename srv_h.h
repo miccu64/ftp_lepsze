@@ -4,6 +4,7 @@
 #include    <sys/time.h>    /* timeval{} for select() */
 #include    <time.h>                /* timespec{} for pselect() */
 #include	<netinet/in.h>  /* sockaddr_in{} and other Internet defns */
+#include    <netinet/tcp.h>
 #include	<arpa/inet.h>   /* inet(3) functions */
 #include	<errno.h>
 #include	<fcntl.h>               /* for nonblocking */
@@ -16,11 +17,11 @@
 #include	<unistd.h>
 #include	<syslog.h>
 
-
+#include <sys/stat.h>
 
 #define LISTENQ 5
 #define BUFFSIZE 1024
-#define BUFFSIZE2 80000
+#define BUFFSIZE2 1024
 #define MAXFD   64
 char    str[INET_ADDRSTRLEN+1];
 

@@ -7,6 +7,88 @@
 #include <arpa/inet.h>
 #include "srv_h.h"
 
+void multicast(char* buf, int count)
+{
+    struct sockaddr_in localSock;
+    struct ip_mreq group;
+    int sd;
+    int datalen;
+    char databuf[20];
+    char adres_multicast[20];
+    char adres_klienta[20];
+
+    strcpy(adres_multicast,"226.1.1.1");
+    strcpy(adres_klienta,"10.0.2.15");//TRZEBA USTAWIC ADRES KARTY SIECIOWEJ!!!
+    /* Create a datagram socket on which to receive. */
+    sd = socket(AF_INET, SOCK_DGRAM, 0);
+    if(sd < 0)
+    {
+        perror("Opening datagram socket error");
+        exit(1);
+    }
+    else
+        printf("Opening datagram socket....OK.\n");
+
+    /* Enable SO_REUSEADDR to allow multiple instances of this */
+    /* application to receive copies of the multicast datagrams. */
+    {
+        int reuse = 1;
+        if(setsockopt(sd, SOL_SOCKET, SO_REUSEADDR, (char *)&reuse, sizeof(reuse)) < 0)
+        {
+            perror("Setting SO_REUSEADDR error");
+            close(sd);
+            exit(1);
+        }
+        else
+            printf("Setting SO_REUSEADDR...OK.\n");
+    }
+    /* Bind to the proper port number with the IP address */
+    /* specified as INADDR_ANY. */
+    memset((char *) &localSock, 0, sizeof(localSock));
+    localSock.sin_family = AF_INET;
+    localSock.sin_port = htons(4321);
+    localSock.sin_addr.s_addr = INADDR_ANY;
+    if(bind(sd, (struct sockaddr*)&localSock, sizeof(localSock)))
+    {
+        perror("Binding datagram socket error");
+        close(sd);
+        exit(1);
+    }
+    else
+        printf("Binding datagram socket...OK.\n");
+
+    /* Join the multicast group 226.1.1.1 on the local 203.106.93.94 */
+    /* interface. Note that this IP_ADD_MEMBERSHIP option must be */
+    /* called for each local interface over which the multicast */
+    /* datagrams are to be received. */
+    group.imr_multiaddr.s_addr = inet_addr(adres_multicast);//adres multicast
+    group.imr_interface.s_addr = inet_addr(adres_klienta);//adres karty sieciowej klienta
+    if(setsockopt(sd, IPPROTO_IP, IP_ADD_MEMBERSHIP, (char *)&group, sizeof(group)) < 0)
+    {
+        perror("Adding multicast group error");
+        close(sd);
+        exit(1);
+    }
+    else
+        printf("Adding multicast group...OK.\n");
+    /* Read from the socket. */
+    datalen = sizeof(databuf);
+    if(read(sd, databuf, datalen) < 0)
+    {
+        perror("Reading datagram message error");
+        close(sd);
+        exit(1);
+    }
+    else
+    {
+        printf("Reading datagram message...OK.\n");
+        printf("The message from multicast server is: \"%s\"\n", databuf);
+    }
+    for(int i = 0; i < count; ++i)
+        buf[i] = databuf[i];
+    return;
+}
+
 void pomoc()
 {
     printf("\n\nCo chcesz zrobic? \nsend [file_name] - przeslij plik \nreceive [file_name] - pobierz plik ");
@@ -20,10 +102,13 @@ int main()
 {
     char buffer[BUFFSIZE], kopia [BUFFSIZE], nazwaPliku[255], option[255];
     char command2[BUFFSIZE], command[BUFFSIZE], command3[BUFFSIZE];
+    char adres[20]={0};
     int clientSocket;
     size_t uchwyt=0;
     struct sockaddr_in serverAddr;
     socklen_t addr_size;
+
+    multicast(adres, sizeof(adres));
 
     /*---- Create the socket. The three arguments are: ----*/
     /* 1) Internet domain 2) Stream socket 3) Default protocol (TCP in this case) */
@@ -35,7 +120,7 @@ int main()
     /* Set port number, using htons function to use proper byte order */
     serverAddr.sin_port = htons(7891);
     /* Set IP address to localhost */
-    serverAddr.sin_addr.s_addr = inet_addr("127.0.0.1");
+    serverAddr.sin_addr.s_addr = inet_addr(adres);
     /* Set all bits of the padding field to 0 */
     memset(serverAddr.sin_zero, '\0', sizeof serverAddr.sin_zero);
 
