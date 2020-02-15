@@ -51,7 +51,6 @@ char* read_command_output(const char* command)
 
 void cmd_child(int connfd)
 {
-
     size_t uchwyt;
     int  zmienNazwe=0;
     int k, sndbuf;
